@@ -1,0 +1,44 @@
+{
+	"name": "delorean-js-debug",
+	"private": true,
+	"displayName": "DeLorean JS Debug",
+	"description": "Combined with a typescript transformer, this extension enables time travel debugging of pure functions",
+	"version": "0.1.0",
+	"publisher": "hediet",
+	"readme": "./README.md",
+	"engines": {
+		"vscode": "^1.46.0"
+	},
+	"activationEvents": [
+		"*"
+	],
+	"main": "./dist/index",
+	"contributes": {
+		"commands": [
+			{
+				"command": "step-backwards",
+				"title": "Step Backwards"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "step-backwards",
+				"key": "F9"
+			}
+		]
+	},
+	"scripts": {
+		"dev": "tsc --watch",
+		"build": "vsce package --yarn"
+	},
+	"devDependencies": {
+		"@types/node": "^13.13.5",
+		"@types/vscode": "1.46.0"
+	},
+	"dependencies": {
+		"@hediet/std": "^0.6.0",
+		"@types/ws": "^7.4.4",
+		"vsce": "^1.95.0",
+		"ws": "^7.4.6"
+	}
+}
