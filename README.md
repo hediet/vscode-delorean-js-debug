@@ -13,3 +13,9 @@ See [README.md](./demo/README.md) of the demo project.
 ## Usage
 
 See [README.md](./extension/README.md) of the extension.
+
+## Debug Visualizer
+
+This extension works nicely with the [Debug Visualizer](https://marketplace.visualstudio.com/items?itemName=hediet.debug-visualizer) extension:
+
+![](./docs/demo-debug-visualizer.gif)
