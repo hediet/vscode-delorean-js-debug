@@ -1,0 +1,32 @@
+{
+	"name": "@hediet/delorean-debug-transformer",
+	"description": "The transformer that enables time travel debugging.",
+	"version": "0.1.0",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"author": {
+		"name": "Henning Dieterichs",
+		"email": "henning.dieterichs@live.de"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/hediet/vscode-delorean-js-debug.git"
+	},
+	"license": "MIT",
+	"files": [
+		"dist",
+		"src"
+	],
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
+	},
+	"scripts": {
+		"dev": "tsc --watch",
+		"build": "tsc"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"typescript": "^4.3.5"
+	}
+}

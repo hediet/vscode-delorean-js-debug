@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"outDir": "out",
+		"target": "es5",
+		"module": "commonjs",
+		"strict": true,
+		"inlineSourceMap": true,
+		"plugins": [{ "transform": "@hediet/delorean-debug-transformer" }]
+	},
+	"include": ["./src/**/*"]
+}
