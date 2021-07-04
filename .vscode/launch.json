@@ -10,7 +10,7 @@
 			"name": "Launch Extension",
 			"runtimeExecutable": "${execPath}",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
+				"--extensionDevelopmentPath=${workspaceFolder}/extension"
 				//"--extensionDevelopmentPath=C:\\dev\\microsoft\\vscode-js-debug\\out",
 				//"--extensionDevelopmentPath=C:\\dev\\hediet\\vscode-debug-visualizer\\extension"
 			],

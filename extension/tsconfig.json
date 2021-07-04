@@ -8,6 +8,7 @@
 		"inlineSources": true,
 		"rootDir": "src",
 		"strict": true,
+		"skipLibCheck": true,
 		"experimentalDecorators": true
 	},
 	"include": ["./src/**/*"]

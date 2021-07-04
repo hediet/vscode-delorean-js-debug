@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { CdpClient } from "./CdpRpcClient";
 import { CdpSession } from "./CdpSession";
 import { StepBackFeature } from "./StepBackFeature";
+import { SemanticVersion } from "@hediet/semver";
 
 class Extension {
 	public readonly dispose = Disposable.fn();
@@ -13,10 +14,45 @@ class Extension {
 		StepBackFeature
 	>();
 
+	private getEnhancedSession(session: vscode.DebugSession): EnhancedSession {
+		let enhancedSession = this.sessions.get(session);
+		if (enhancedSession === undefined) {
+			enhancedSession = new EnhancedSession(session);
+			this.sessions.set(session, enhancedSession);
+		}
+		return enhancedSession;
+	}
+
+	private checkDependencies() {
+		function getVersion(extensionId: string): SemanticVersion | undefined {
+			const extension = vscode.extensions.getExtension(extensionId);
+			if (extension) {
+				return SemanticVersion.parse(extension.packageJSON.version);
+			}
+			return undefined;
+		}
+
+		const nightlyId = "ms-vscode.js-debug-nightly";
+		const requiredNightlyVersion = SemanticVersion.parse("2021.6.1117");
+
+		const stableId = "ms-vscode.js-debug";
+		const requiredStableVersion = SemanticVersion.parse("1.58.0");
+
+		if (
+			new Set([-1, undefined]).has(
+				getVersion(nightlyId)?.compareTo(requiredNightlyVersion)
+			) &&
+			new Set([-1, undefined]).has(
+				getVersion(stableId)?.compareTo(requiredStableVersion)
+			)
+		) {
+			throw new Error(
+				`${stableId} >= version ${requiredStableVersion.toString()} or ${nightlyId} >= version ${requiredNightlyVersion.toString()} is required.`
+			);
+		}
+	}
+
 	constructor(context: vscode.ExtensionContext) {
-		vscode.debug.onDidStartDebugSession((s) => {
-			this.sessions.set(s, new EnhancedSession(s));
-		});
 		vscode.debug.onDidTerminateDebugSession((s) => {
 			const enhancedSession = this.sessions.get(s);
 			if (enhancedSession) {
@@ -28,21 +64,29 @@ class Extension {
 		vscode.commands.registerCommand(
 			"delorean-js-debug.step-backwards",
 			async () => {
-				const session = vscode.debug.activeDebugSession;
-				if (!session) {
-					return;
-				}
+				try {
+					this.checkDependencies();
+					const session = vscode.debug.activeDebugSession;
+					if (!session) {
+						throw new Error("No active debug session!");
+					}
 
-				const enhancedSession = this.sessions.get(session)!;
-				const cdp = await enhancedSession.cdpSession;
+					const enhancedSession = this.getEnhancedSession(session);
+					const cdp = await enhancedSession.cdpSession;
 
-				let stepBackFeature =
-					this.stepBackFeatures.get(enhancedSession);
-				if (!stepBackFeature) {
-					stepBackFeature = new StepBackFeature(cdp);
-					this.stepBackFeatures.set(enhancedSession, stepBackFeature);
+					let stepBackFeature =
+						this.stepBackFeatures.get(enhancedSession);
+					if (!stepBackFeature) {
+						stepBackFeature = new StepBackFeature(cdp);
+						this.stepBackFeatures.set(
+							enhancedSession,
+							stepBackFeature
+						);
+					}
+					await stepBackFeature.stepBack();
+				} catch (e) {
+					vscode.window.showErrorMessage(e.message);
 				}
-				await stepBackFeature.stepBack();
 			}
 		);
 	}
@@ -57,8 +101,6 @@ class EnhancedSession {
 	}
 
 	private async init(): Promise<CdpSession> {
-		await new Promise((r) => setTimeout(r, 500));
-
 		try {
 			const result = (await vscode.commands.executeCommand(
 				"extension.js-debug.requestCDPProxy",

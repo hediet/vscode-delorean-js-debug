@@ -12,6 +12,7 @@
     "scripts": {
         "postinstall": "ts-patch install",
         "dev": "tsc --watch",
-        "build": "tsc"
+        "build": "tsc",
+        "build-production": "tsc tsconfig.production.json"
     }
 }

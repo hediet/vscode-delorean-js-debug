@@ -4,9 +4,7 @@
 		"target": "es5",
 		"module": "commonjs",
 		"strict": true,
-		"inlineSourceMap": true,
-		"skipLibCheck": true,
-		"plugins": [{ "transform": "@hediet/delorean-debug-transformer" }]
+		"inlineSourceMap": true
 	},
 	"include": ["./src/**/*"]
 }

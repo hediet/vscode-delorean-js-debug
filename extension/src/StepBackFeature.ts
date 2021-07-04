@@ -2,6 +2,7 @@ import { Disposable } from "@hediet/std/disposable";
 import { EventEmitter } from "@hediet/std/events";
 import { wait } from "@hediet/std/timer";
 import { readFileSync } from "fs";
+import { resolve } from "path";
 import Cdp from "./api";
 import { CdpSession } from "./CdpSession";
 
@@ -59,7 +60,7 @@ export class StepBackFeature {
 		});
 
 		const script = readFileSync(
-			require.resolve("../resources/stepBackScript-content"),
+			resolve(__dirname, "../resources/stepBackScript-content.js"),
 			{ encoding: "utf-8" }
 		);
 		const result = await this.session.api.Debugger.evaluateOnCallFrame({
