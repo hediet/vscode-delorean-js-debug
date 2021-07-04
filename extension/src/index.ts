@@ -25,22 +25,26 @@ class Extension {
 			}
 		});
 
-		vscode.commands.registerCommand("step-backwards", async () => {
-			const session = vscode.debug.activeDebugSession;
-			if (!session) {
-				return;
-			}
+		vscode.commands.registerCommand(
+			"delorean-js-debug.step-backwards",
+			async () => {
+				const session = vscode.debug.activeDebugSession;
+				if (!session) {
+					return;
+				}
 
-			const enhancedSession = this.sessions.get(session)!;
-			const cdp = await enhancedSession.cdpSession;
+				const enhancedSession = this.sessions.get(session)!;
+				const cdp = await enhancedSession.cdpSession;
 
-			let stepBackFeature = this.stepBackFeatures.get(enhancedSession);
-			if (!stepBackFeature) {
-				stepBackFeature = new StepBackFeature(cdp);
-				this.stepBackFeatures.set(enhancedSession, stepBackFeature);
+				let stepBackFeature =
+					this.stepBackFeatures.get(enhancedSession);
+				if (!stepBackFeature) {
+					stepBackFeature = new StepBackFeature(cdp);
+					this.stepBackFeatures.set(enhancedSession, stepBackFeature);
+				}
+				await stepBackFeature.stepBack();
 			}
-			await stepBackFeature.stepBack();
-		});
+		);
 	}
 }
 

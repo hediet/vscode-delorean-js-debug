@@ -4,7 +4,7 @@
 [![](https://img.shields.io/static/v1?style=social&label=Donate&message=%E2%9D%A4&logo=Paypal&color&link=%3Curl%3E)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZP5F38L4C88UY&source=url)
 [![](https://img.shields.io/twitter/follow/hediet_dev.svg?style=social)](https://twitter.com/intent/follow?screen_name=hediet_dev)
 
-![](./docs/demo.gif)
+![](../docs/demo.gif)
 
 ## Usage
 
@@ -32,3 +32,7 @@ Install `@hediet/delorean-debug-transformer` and add it to your `tsconfig.json`:
 
 Install `ts-patch` and run `ts-patch install` to make `tsc` consider `plugins`.
 I recommend to do that in a `postinstall` script (see demo).
+
+## Demo
+
+See [demo](https://github.com/hediet/vscode-delorean-js-debug/tree/main/demo).
