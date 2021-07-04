@@ -3,7 +3,7 @@
 	"private": true,
 	"displayName": "DeLorean JS Debug",
 	"description": "This extension enables time travel debugging of pure functions (requires TypeScript and a custom transformer)",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"publisher": "hediet",
 	"bugs": {
 		"url": "https://github.com/hediet/vscode-delorean-js-debug/issues"
@@ -42,8 +42,8 @@
 		"dev": "tsc --watch",
 		"build": "yarn build-tsc && yarn package",
 		"build-tsc": "tsc",
-		"package": "vsce package --yarn -o dist/extension.vsix",
-		"pub": "vsce publish --packagePath dist/extension.vsix --yarn --baseImagesUrl https://github.com/hediet/vscode-delorean-js-debug/raw/main/extension --baseContentUrl https://github.com/hediet/vscode-delorean-js-debug/raw/main/extension"
+		"package": "vsce package --yarn -o dist/extension.vsix --baseContentUrl https://github.com/hediet/vscode-delorean-js-debug/raw/main/extension --baseImagesUrl https://github.com/hediet/vscode-delorean-js-debug/raw/main/extension",
+		"pub": "vsce publish --packagePath dist/extension.vsix"
 	},
 	"devDependencies": {
 		"@types/node": "^13.13.5",
