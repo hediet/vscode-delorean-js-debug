@@ -19,3 +19,7 @@ See [README.md](./extension/README.md) of the extension.
 This extension works nicely with the [Debug Visualizer](https://marketplace.visualstudio.com/items?itemName=hediet.debug-visualizer) extension:
 
 ![](./docs/demo-debug-visualizer.gif)
+
+## See also
+
+[Replay.io](https://replay.io/) for a fully featured time travel debugging solution.
