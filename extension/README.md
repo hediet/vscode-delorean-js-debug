@@ -36,3 +36,9 @@ I recommend to do that in a `postinstall` script (see demo).
 ## Demo
 
 See [demo](https://github.com/hediet/vscode-delorean-js-debug/tree/main/demo).
+
+## Debug Visualizer
+
+This extension works nicely with the [Debug Visualizer](https://marketplace.visualstudio.com/items?itemName=hediet.debug-visualizer) extension:
+
+![](../docs/demo-debug-visualizer.gif)
