@@ -1,5 +1,5 @@
 {
-	"name": "@hediet/code-insight-transformer",
+	"name": "@hediet/code-insight-recording",
 	"description": "The transformer.",
 	"version": "0.1.0",
 	"main": "dist/index.js",

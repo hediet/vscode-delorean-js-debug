@@ -2,7 +2,10 @@
 	"private": true,
 	"workspaces": [
 		"./extension",
-		"./transformer"
+		"./transformer",
+		"./recording",
+		"./node-cli",
+		"./webview"
 	],
 	"scripts": {
 		"build": "yarn build-transformer && yarn build-extension && yarn build-demo",

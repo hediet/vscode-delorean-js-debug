@@ -61,11 +61,11 @@
 				if (isAtOrAfterTarget()) {
 					let i = 0;
 					notifyDebuggerBeforeBusyLoop();
-					// console.log("before busy loop 1");
+					console.log("before busy loop 1");
 					while (!globalThis.$$DLRN_breakpointsEnabled) {
 						i++;
 					}
-					// console.log("after busy loop 1");
+					console.log("after busy loop 1");
 				}
 			},
 		});
@@ -81,11 +81,11 @@
 			if (value < globalThis.$$DLRN_l_base && isAtOrAfterTarget()) {
 				notifyDebuggerBeforeBusyLoop();
 				let i = 0;
-				// console.log("before busy loop 2");
+				console.log("before busy loop 2");
 				while (!globalThis.$$DLRN_breakpointsEnabled) {
 					i++;
 				}
-				// console.log("after busy loop 2");
+				console.log("after busy loop 2");
 			}
 			globalThis.$$DLRN_l_base = value;
 		},

@@ -3,10 +3,11 @@
 		"outDir": "dist",
 		"target": "es5",
 		"module": "commonjs",
+		"moduleResolution": "classic",
 		"strict": true,
 		"inlineSourceMap": true,
 		"skipLibCheck": true,
-		"plugins": [{ "transform": "@hediet/delorean-debug-transformer" }]
+		"plugins": [{ "transform": "@hediet/code-insight-transformer" }]
 	},
 	"include": ["./src/**/*"]
 }
