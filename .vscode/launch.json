@@ -5,6 +5,24 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Launch Program",
+			"program": "${workspaceFolder}/node-cli/dist/index.js",
+			"request": "launch",
+			"args": [
+				"D:\\dev\\microsoft\\TypeScript\\built\\local\\tsc.js",
+				"-p",
+				"D:\\dev\\2024\\vscode-delorean-js-debug\\demo\\ts-demo\\tsconfig.json"
+			],
+			"skipFiles": ["<node_internals>/**"],
+			"type": "node",
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/**/*.(m|c|)js",
+				"!**/node_modules/**",
+				"D:\\dev\\microsoft\\TypeScript\\built\\local\\**.*"
+			]
+		},
+		{
 			"type": "extensionHost",
 			"request": "launch",
 			"name": "Launch Extension",

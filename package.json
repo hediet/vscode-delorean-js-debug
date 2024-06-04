@@ -5,7 +5,8 @@
 		"./transformer",
 		"./recording",
 		"./node-cli",
-		"./webview"
+		"./webview",
+		"./sourcemap"
 	],
 	"scripts": {
 		"build": "yarn build-transformer && yarn build-extension && yarn build-demo",

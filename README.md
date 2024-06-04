@@ -23,3 +23,32 @@ This extension works nicely with the [Debug Visualizer](https://marketplace.visu
 ## See also
 
 [Replay.io](https://replay.io/) for a fully featured time travel debugging solution.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Recording
+* Module Id
+* Function Id
+* Block Id
+
+
+Stretch Goals
+* CLI to record NodeJS execution
+    * node-record my-script.ts
+    * Should transform js (and fix sourcemap)
+
+* Step through recording
+    * Stack view
+    * Step Over/In/Out/Back on actual source
+
+* VS Code extension start/stop recording

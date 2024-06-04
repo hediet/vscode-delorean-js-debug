@@ -5,35 +5,41 @@ export class ExecutionRecorder {
 	private readonly resolvedModules = new Set<number>();
 
 	constructor(
-		private readonly resolveModuleId: (moduleId: number) => {
-			modulePath: string;
-		}
-	) {}
+		private readonly resolveModuleId: (moduleId: number) => ModuleSourceMap,
+	) { }
 
 	public getBuffer(): Int8Array {
 		return this._buffer.getBuffer();
 	}
 
-	public recordFunction(moduleId: number, functionId: number): void {
+	public recordFunctionEnter(moduleId: number, functionId: number): void {
 		if (moduleId !== this.lastModuleId) {
 			writeInstruction(Instruction.SetModuleId, moduleId, this._buffer);
-			this.writeModuleIdPath(moduleId);
+			this.writeModuleInfo(moduleId);
 			this.lastModuleId = moduleId;
 		}
 
 		writeInstruction(Instruction.CallFunction, functionId, this._buffer);
 	}
 
-	private writeModuleIdPath(moduleId: number): void {
+	public recordBlockExecution(blockId: number): void {
+		writeInstruction(Instruction.Block, blockId, this._buffer);
+	}
+
+	public recordFunctionReturn(): void {
+		this._buffer.push(Instruction.Return);
+	}
+
+	private writeModuleInfo(moduleId: number): void {
 		if (this.resolvedModules.has(moduleId)) {
 			return;
 		}
 		this.resolvedModules.add(moduleId);
 
-		const { modulePath } = this.resolveModuleId(moduleId);
-		const modulePathBytes = new TextEncoder().encode(modulePath);
+		const moduleInfo = this.resolveModuleId(moduleId);
+		const modulePathBytes = new TextEncoder().encode(JSON.stringify(moduleInfo));
 
-		this._buffer.push(Instruction.SetModulePath);
+		this._buffer.push(Instruction.SetModuleInfo);
 		// write length
 		this._buffer.push((modulePathBytes.length >>> 24) & 0b111111);
 		this._buffer.push((modulePathBytes.length >>> 16) & 0b111111);
@@ -46,21 +52,22 @@ export class ExecutionRecorder {
 		}
 	}
 
-	public recordBlock(blockId: number): void {
-		writeInstruction(Instruction.Block, blockId, this._buffer);
-	}
-
-	public recordReturn(): void {
-		this._buffer.push(Instruction.Return);
-	}
 }
+
+export interface ModuleSourceMap {
+	sourcePaths: string[];
+	fnMaps: (LocationRef | null)[];
+	blockMaps: (LocationRef | null)[];
+}
+
+export type LocationRef = [lineIdx: number, charIdx: number, /** If not set, same as previous one */ sourcePathIdx?: number] | /** If charIdx and sourcePathIdx are same as previous one */ number;
 
 const enum Instruction {
 	SetModuleId = 0b00000000,
 	CallFunction = 0b01000000,
 	Block = 0b10000000,
 	Return = 0b11000000,
-	SetModulePath = 0b11000001,
+	SetModuleInfo = 0b11000001,
 }
 
 function writeInstruction(
@@ -91,7 +98,7 @@ class DynamicByteArray {
 	private _buffer: Int8Array = new Int8Array(1024);
 	private _length: number = 0;
 
-	constructor() {}
+	constructor() { }
 
 	public push(byte: number): void {
 		if (this._length >= this._buffer.length) {
@@ -103,7 +110,6 @@ class DynamicByteArray {
 	}
 
 	public getBuffer(): Int8Array {
-		console.log(this._length);
 		return this._buffer.slice(0, this._length);
 	}
 }
