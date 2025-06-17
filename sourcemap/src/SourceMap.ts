@@ -61,7 +61,7 @@ export class SourceMapV3 {
         return {
             sourceIdx: segment.sourceIdx,
             lineIdx: segment.sourceLine,
-            columnIdx: segment.sourceColumn
+            columnIdx: segment.sourceColumn + (charIdx - segment.genColumn),
         };
     }
 }

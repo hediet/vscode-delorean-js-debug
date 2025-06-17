@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { ExecutionRecorder, ModuleSourceMap } from "@hediet/code-insight-recording";
+import { ExecutionRecorder, ISerializedModuleInfo } from "@hediet/code-insight-recording";
 import { SourceMapLocation, SourceMapV3WithPath, sourceMapApplyEdit } from "@hediet/sourcemap";
 import { existsSync, writeFileSync } from "fs";
 import { Module } from "module";
@@ -18,7 +18,7 @@ const originalCompile = (Module.prototype as any)._compile;
 			map = SourceMapV3WithPath.fromFile(sourceMappingPath);
 		}
 	}
-	const edit = createInstrumentationEditsTs(content, map);
+	const edit = createInstrumentationEditsTs(content, filename, map);
 
 	const updatedMap = map ? sourceMapApplyEdit(map.sourceMap, edit) : undefined;
 	const updatedLoc = updatedMap ? SourceMapLocation.createInline(updatedMap) : undefined;
@@ -26,7 +26,11 @@ const originalCompile = (Module.prototype as any)._compile;
 	content = SourceMapLocation.set(content, updatedLoc);
 	content = edit.applyToString(content);
 
-	return originalCompile.call(this, content, filename);
+	writeFileSync(filename + ".instrumented.js", content);
+
+	console.log('finished transpiling');
+	const result = originalCompile.call(this, content, filename);
+	return result;
 };
 
 process.argv = [...process.argv.slice(0, 1), ...process.argv.slice(2)];
@@ -37,7 +41,7 @@ interface Global {
 	$$CI_f(moduleId: number, functionId: number): void;
 	$$CI_b(blockId: number): void;
 	$$CI_r(): void;
-	$$CI_modules: { [moduleId: number]: ModuleSourceMap };
+	$$CI_modules: { [moduleId: number]: ISerializedModuleInfo };
 }
 
 const global = globalThis as unknown as Global;

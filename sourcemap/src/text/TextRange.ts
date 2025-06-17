@@ -45,4 +45,8 @@ export class TextRange {
     equals(other: TextRange): boolean {
         return this.start.equals(other.start) && this.endExclusive.equals(other.endExclusive);
     }
+
+    toString() {
+        return `[${this.start.toString()}, ${this.endExclusive.toString()})`;
+    }
 }

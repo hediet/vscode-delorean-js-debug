@@ -19,12 +19,12 @@
 	"engines": {
 		"vscode": "^1.46.0"
 	},
-	"activationEvents": [
-		"onCommand:delorean-js-debug.step-backwards"
-	],
 	"main": "./dist/index",
 	"icon": "logo.drawio.png",
-	"contributes": {
+	"activationEvents": [
+		"*"
+	],
+	"_contributes_old": {
 		"commands": [
 			{
 				"command": "delorean-js-debug.step-backwards",
@@ -37,6 +37,51 @@
 				"key": "F9"
 			}
 		]
+	},
+	"contributes": {
+		"commands": [
+			{
+				"command": "delorean-js-debug.loadRecording",
+				"title": "DeLorean JS Debug: Load Recording"
+			},
+			{
+				"command": "delorean-js-debug.step-forwards",
+				"title": "DeLorean JS Debug: Step Forwards"
+			},
+			{
+				"command": "delorean-js-debug.step-backwards",
+				"title": "DeLorean JS Debug: Step Backwards"
+			}
+		],
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "delorean-js-debug.loadRecording",
+					"group": "inline",
+					"when": "resourceExtname == .exec-rec"
+				}
+			]
+		},
+		"keybindings": [
+			{
+				"command": "delorean-js-debug.step-forwards",
+				"key": "F10"
+			},
+			{
+				"command": "delorean-js-debug.step-backwards",
+				"key": "F9"
+			}
+		],
+		"views": {
+			"debug": [
+				{
+					"id": "delorean-js-debug.recording",
+					"name": "Recording",
+					"when": "delorean-js-debug.hasRecording",
+					"order": 1
+				}
+			]
+		}
 	},
 	"scripts": {
 		"dev": "tsc --watch",
@@ -62,6 +107,7 @@
 	"dependencies": {
 		"ws": "^7.4.6",
 		"@hediet/std": "^0.6.0",
-		"@hediet/semver": "^0.2.2"
+		"@hediet/semver": "^0.2.2",
+		"@hediet/code-insight-recording": "*"
 	}
 }

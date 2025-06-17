@@ -27,6 +27,13 @@
 	},
 	"dependencies": {},
 	"devDependencies": {
-		"typescript": "^4.9.5"
+		"recording-analyzer-rust": "*",
+		"typescript": "^5.4.5",
+		"vitest": "^1.6.0",
+		"rollup": "^4.18.0",
+		"@rollup/plugin-typescript": "^11.1.6",
+		"rollup-plugin-delete": "^2.0.0",
+		"@rollup/plugin-wasm": "^6.2.2",
+		"vite-plugin-wasm": "^3.3.0"
 	}
 }

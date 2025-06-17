@@ -6,7 +6,8 @@
 		"./recording",
 		"./node-cli",
 		"./webview",
-		"./sourcemap"
+		"./sourcemap",
+		"./recording-analyzer-rust/pkg"
 	],
 	"scripts": {
 		"build": "yarn build-transformer && yarn build-extension && yarn build-demo",

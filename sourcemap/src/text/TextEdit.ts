@@ -12,7 +12,9 @@ export class TextEdit {
     }
 
     constructor(public readonly edits: readonly SingleTextEdit[]) {
-        //assertFn(() => checkAdjacentItems(edits, (a, b) => a.range.getEndPosition().isBeforeOrEqual(b.range.getStartPosition())));
+        if (!checkAdjacentItems(edits, (a, b) => a.range.getEndPosition().isBeforeOrEqual(b.range.getStartPosition()))) {
+            throw new Error();
+        }
     }
 
     /**
@@ -227,4 +229,13 @@ export class StringText extends AbstractText {
     get length(): TextLength {
         return this._t.textLength;
     }
+}
+
+function checkAdjacentItems<T>(items: readonly T[], check: (a: T, b: T) => boolean): boolean {
+    for (let i = 1; i < items.length; i++) {
+        if (!check(items[i - 1], items[i])) {
+            return false;
+        }
+    }
+    return true;
 }

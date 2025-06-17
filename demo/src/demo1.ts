@@ -1,13 +1,3 @@
-eval(`
-globalThis.$$CI_r = (
-	moduleId,
-	methodId,
-	blockId
-) => {
-	console.log("$$CI_r", moduleId, methodId, blockId);
-};
-`);
-
 class Foo {
 	test() {
 		console.log("test", () => this);
@@ -15,7 +5,7 @@ class Foo {
 }
 
 function main() {
-	console.log("start", () => {});
+	console.log("start", () => { });
 	const arr = new Array<number>();
 	arr.push(1);
 	arr.push(2);

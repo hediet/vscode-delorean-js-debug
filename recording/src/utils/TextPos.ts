@@ -52,8 +52,4 @@ export class TextPos {
     isBeforeOrEqual(other: TextPos): boolean {
         return this.lineIdx < other.lineIdx || (this.lineIdx === other.lineIdx && this.charIdx <= other.charIdx);
     }
-
-    toString() {
-        return `${this.lineIdx}:${this.charIdx}`;
-    }
 }

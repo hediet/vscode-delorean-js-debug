@@ -13,6 +13,7 @@
 				"-p",
 				"D:\\dev\\2024\\vscode-delorean-js-debug\\demo\\ts-demo\\tsconfig.json"
 			],
+			"cwd": "${workspaceFolder}/demo",
 			"skipFiles": ["<node_internals>/**"],
 			"type": "node",
 			"sourceMaps": true,
@@ -32,7 +33,7 @@
 				//"--extensionDevelopmentPath=C:\\dev\\microsoft\\vscode-js-debug\\out",
 				//"--extensionDevelopmentPath=C:\\dev\\hediet\\vscode-debug-visualizer\\extension"
 			],
-			"outFiles": ["${workspaceFolder}/dist/**/*.js"]
+			"outFiles": ["${workspaceFolder}/extension/dist/**/*.js"]
 		}
 	]
 }

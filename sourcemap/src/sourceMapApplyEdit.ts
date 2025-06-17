@@ -15,6 +15,8 @@ export function sourceMapApplyEdit(sourceMap: SourceMapV3, edit: TextEdit): Sour
 }
 
 function mappingsApplyEdit(mappings: SourceMapSegment[][], edit: TextEdit): SourceMapSegment[][] {
+    edit = edit.normalize();
+
     let lastLineLength = 0;
     let lastLine: SourceMapSegment[] = [];
     const resultMappings: SourceMapSegment[][] = [lastLine];
@@ -29,7 +31,7 @@ function mappingsApplyEdit(mappings: SourceMapSegment[][], edit: TextEdit): Sour
             if (idx !== -1) {
                 // We might be in the middle of a mapping and might have to cut it
                 const before = line[idx];
-                line.push(before.withDeltaColumn(lastLineLength - before.genColumn));
+                lastLine.push(before.withDeltaColumn(lastLineLength - before.genColumn));
             }
 
             for (let i = idx + 1; i < line.length; i++) {
@@ -37,11 +39,11 @@ function mappingsApplyEdit(mappings: SourceMapSegment[][], edit: TextEdit): Sour
                 if (s.genColumn >= range.endExclusive.charIdx) {
                     break;
                 }
-                line.push(s.withGenColumn(s.genColumn + columnOffset));
+                lastLine.push(s.withGenColumn(s.genColumn + columnOffset));
             }
 
             lastLineLength += range.endExclusive.charIdx - range.start.charIdx;
-            line.push(new SourceMapSegment1(lastLineLength));
+            lastLine.push(new SourceMapSegment1(lastLineLength));
         } else {
             // start line
             const startLine = mappings[range.start.lineIdx];

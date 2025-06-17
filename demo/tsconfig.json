@@ -5,9 +5,10 @@
 		"module": "commonjs",
 		"moduleResolution": "classic",
 		"strict": true,
-		"inlineSourceMap": true,
-		"skipLibCheck": true,
-		"plugins": [{ "transform": "@hediet/code-insight-transformer" }]
+		"inlineSourceMap": false,
+		"sourceMap": true,
+		"skipLibCheck": true
+		//"plugins": [{ "transform": "@hediet/code-insight-transformer" }]
 	},
 	"include": ["./src/**/*"]
 }

@@ -1,132 +1,146 @@
-import { Disposable } from "@hediet/std/disposable";
 import * as vscode from "vscode";
-import { CdpClient } from "./CdpRpcClient";
-import { CdpSession } from "./CdpSession";
-import { StepBackFeature } from "./StepBackFeature";
-import { SemanticVersion } from "@hediet/semver";
+import { Disposable } from "./utils/disposables";
+import { IObservable, autorun, constObservable, derived, disposableObservableValue, waitForState } from "./utils/observables/observable";
+import { RecordingSession } from "./RecordingSession";
+import { createContextKey } from "./utils/vscodeObservables";
+import { SourceLocation } from "@hediet/code-insight-recording/dist/ModuleInfo";
 
-class Extension {
-	public readonly dispose = Disposable.fn();
+class Extension extends Disposable {
+	private readonly _recordingSession = this._register(disposableObservableValue<RecordingSession | undefined>(this, undefined));
 
-	private readonly sessions = new Map<vscode.DebugSession, EnhancedSession>();
-	private readonly stepBackFeatures = new Map<
-		EnhancedSession,
-		StepBackFeature
-	>();
+	constructor() {
+		super();
 
-	private getEnhancedSession(session: vscode.DebugSession): EnhancedSession {
-		let enhancedSession = this.sessions.get(session);
-		if (enhancedSession === undefined) {
-			enhancedSession = new EnhancedSession(session);
-			this.sessions.set(session, enhancedSession);
-		}
-		return enhancedSession;
-	}
-
-	private checkDependencies() {
-		function getVersion(extensionId: string): SemanticVersion | undefined {
-			const extension = vscode.extensions.getExtension(extensionId);
-			if (extension) {
-				return SemanticVersion.parse(extension.packageJSON.version);
+		this._register(vscode.commands.registerCommand("delorean-js-debug.loadRecording", async (fileUri?: vscode.Uri) => {
+			if (!fileUri) {
+				return;
 			}
-			return undefined;
-		}
+			this._loadRecording(fileUri);
+		}));
 
-		const nightlyId = "ms-vscode.js-debug-nightly";
-		const requiredNightlyVersion = SemanticVersion.parse("2021.6.1117");
-
-		const stableId = "ms-vscode.js-debug";
-		const requiredStableVersion = SemanticVersion.parse("1.58.0");
-
-		if (
-			new Set([-1, undefined]).has(
-				getVersion(nightlyId)?.compareTo(requiredNightlyVersion)
-			) &&
-			new Set([-1, undefined]).has(
-				getVersion(stableId)?.compareTo(requiredStableVersion)
-			)
-		) {
-			throw new Error(
-				`${stableId} >= version ${requiredStableVersion.toString()} or ${nightlyId} >= version ${requiredNightlyVersion.toString()} is required.`
-			);
-		}
-	}
-
-	constructor(context: vscode.ExtensionContext) {
-		vscode.debug.onDidTerminateDebugSession((s) => {
-			const enhancedSession = this.sessions.get(s);
-			if (enhancedSession) {
-				this.sessions.delete(s);
-				enhancedSession.dispose();
+		this._register(vscode.commands.registerCommand("delorean-js-debug.step-forwards", () => {
+			const session = this._recordingSession.get();
+			if (session) {
+				session.forwards();
 			}
-		});
+		}));
 
-		vscode.commands.registerCommand(
-			"delorean-js-debug.step-backwards",
-			async () => {
-				try {
-					this.checkDependencies();
-					const session = vscode.debug.activeDebugSession;
-					if (!session) {
-						throw new Error("No active debug session!");
-					}
+		this._register(vscode.commands.registerCommand("delorean-js-debug.step-backwards", () => {
+			const session = this._recordingSession.get();
+			if (session) {
+				session.backwards();
+			}
+		}));
 
-					const enhancedSession = this.getEnhancedSession(session);
-					const cdp = await enhancedSession.cdpSession;
+		this._register(vscode.commands.registerCommand("delorean-js-debug.open-location", (location: SourceLocation) => {
+			vscode.window.showTextDocument(vscode.Uri.file(location.sourcePath), {
+				selection: rangeFromPosition(new vscode.Position(location.pos.lineIdx, location.pos.charIdx)),
+				viewColumn: vscode.ViewColumn.One
+			});
+		}));
 
-					let stepBackFeature =
-						this.stepBackFeatures.get(enhancedSession);
-					if (!stepBackFeature) {
-						stepBackFeature = new StepBackFeature(cdp);
-						this.stepBackFeatures.set(
-							enhancedSession,
-							stepBackFeature
+		function rangeFromPosition(position: vscode.Position): vscode.Range {
+			return new vscode.Range(position, position);
+		}
+
+		this._register(createContextKey("delorean-js-debug.hasRecording", this._recordingSession.map(s => !!s)));
+
+		this._loadRecording(vscode.Uri.file("D:\\dev\\2024\\vscode-delorean-js-debug\\demo\\out.exec-rec"));
+
+		const view = this._register(vscode.window.createTreeView("delorean-js-debug.recording", {
+			treeDataProvider: new TreeDataProviderImpl(derived(this, reader => {
+				const session = this._recordingSession.read(reader);
+				if (!session) { return []; }
+				const stack = session.stack.read(reader);
+				return [new ObservableTreeItem(
+					constObservable(new vscode.TreeItem("Stack " + session.currentInstructionIdx.read(reader), vscode.TreeItemCollapsibleState.Expanded)),
+					stack.frames.map(frame => {
+						return new ObservableTreeItem(
+							constObservable({
+								label: frame.location?.toString(),
+								command: {
+									command: 'delorean-js-debug.open-location',
+									title: 'Open',
+									arguments: [frame.location],
+								}
+							}),
+							constObservable([])
 						);
-					}
-					await stepBackFeature.stepBack();
-				} catch (e) {
-					vscode.window.showErrorMessage(e.message);
-				}
-			}
-		);
+					})
+				)];
+			}))
+		}));
+	}
+
+	private async _loadRecording(fileUri: vscode.Uri) {
+		const session = await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "Loading recording",
+			cancellable: false
+		}, () => RecordingSession.load(fileUri));
+
+		this._recordingSession.set(session, undefined);
 	}
 }
 
-class EnhancedSession {
-	public readonly dispose = Disposable.fn();
-	public readonly cdpSession: Promise<CdpSession>;
+class ObservableTreeItem implements IObservableTreeItem {
+	public readonly treeItem: IObservable<vscode.TreeItem | 'loading'>;
+	public readonly children: IObservable<IObservableTreeItem[] | 'loading'>;
 
-	constructor(public readonly session: vscode.DebugSession) {
-		this.cdpSession = this.init();
+	constructor(
+		treeItem: vscode.TreeItem | IObservable<vscode.TreeItem | 'loading'>,
+		children?: IObservable<IObservableTreeItem[] | 'loading'> | IObservableTreeItem[]
+	) {
+		this.treeItem = ('reportChanges' in treeItem) ? treeItem : constObservable(treeItem);
+		this.children = children ? (('reportChanges' in children) ? children : constObservable(children)) : constObservable([]);
+	}
+}
+
+interface IObservableTreeItem {
+	get treeItem(): IObservable<vscode.TreeItem | 'loading'>;
+	get children(): IObservable<IObservableTreeItem[] | 'loading'>;
+}
+
+class TreeDataProviderImpl extends Disposable implements vscode.TreeDataProvider<IObservableTreeItem> {
+	private readonly _onDidChangeTreeData = this._register(new vscode.EventEmitter<IObservableTreeItem | void | null>());
+	public readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+	constructor(
+		private readonly _children: IObservable<IObservableTreeItem[] | 'loading'>,
+	) {
+		super();
+
+		autorun(reader => {
+			const watch = (items: IObservable<IObservableTreeItem[] | 'loading'>) => {
+				const v = items.read(reader);
+				if (v === 'loading') { return; }
+				for (const item of v) {
+					watch(item.children);
+				}
+			};
+			watch(this._children);
+			this._onDidChangeTreeData.fire();
+		});
 	}
 
-	private async init(): Promise<CdpSession> {
-		try {
-			const result = (await vscode.commands.executeCommand(
-				"extension.js-debug.requestCDPProxy",
-				this.session.id
-			)) as { host: string; port: number; path: string } | undefined;
+	getTreeItem(element: IObservableTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+		const value = element.treeItem.get();
+		if (value !== 'loading') { return value; }
+		return waitForState(element.treeItem, v => v !== 'loading').then(v => {
+			return v as any;
+		});
+	}
 
-			if (!result) {
-				throw new Error("CDP proxy could not be started");
-			}
-
-			const client = await CdpClient.connect({
-				host: result.host,
-				port: result.port,
-				path: result.path,
-			});
-			this.dispose.track(client);
-			const session = await CdpSession.create(client);
-
-			return session;
-		} catch (e) {
-			console.error(e);
-			return e;
-		}
+	async getChildren(element?: IObservableTreeItem): Promise<IObservableTreeItem[]> {
+		const target = element?.children ?? this._children;
+		const value = target.get();
+		if (value !== 'loading') { return value; }
+		return waitForState(target, v => v !== 'loading').then(v => {
+			return v as any;
+		});
 	}
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	context.subscriptions.push(new Extension(context));
+	context.subscriptions.push(new Extension());
 }

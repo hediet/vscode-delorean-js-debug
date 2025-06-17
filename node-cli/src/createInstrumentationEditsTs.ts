@@ -1,96 +1,54 @@
-import { PositionOffsetTransformer, SingleTextEdit, SourceMapV3, SourceMapV3WithPath, TextEdit, TextRange } from "@hediet/sourcemap";
+import { FunctionInfo, LocationRef, ModuleInfo } from "@hediet/code-insight-recording";
+import { PositionOffsetTransformer, SingleTextEdit, SourceMapV3WithPath, TextEdit, TextRange } from "@hediet/sourcemap";
 import * as ts from "typescript";
 
-export function createInstrumentationEditsTs(content: string, sourceMap: SourceMapV3WithPath | undefined): TextEdit {
+export function createInstrumentationEditsTs(content: string, path: string, sourceMap: SourceMapV3WithPath | undefined): TextEdit {
     const edits: SingleTextEdit[] = [];
     const t = new PositionOffsetTransformer(content);
 
     let functionCounter = 0;
 
-    type LocationRef = [lineIdx: number, charIdx: number, /** If not set, same as previous one */ sourcePathIdx?: number] | /** If charIdx and sourcePathIdx are same as previous one */ number;
+    const pathToSourcePathIdx = new Map<number, number>();
+    const sourcePaths: string[] = [];
+    const fnInfos: { location: LocationRef | null, locationByBlockId: (LocationRef | null)[] }[] = [];
 
-    interface ModuleSourceMap {
-        sourcePaths: string[];
-        fnMaps: (LocationRef | null)[];
-        blockMaps: (LocationRef | null)[];
-    }
-
-    const pathToModuleId = new Map<number, number>();
-
-    const moduleMap: ModuleSourceMap = {
-        sourcePaths: [],
-        fnMaps: [],
-        blockMaps: [],
-    };
-
-    function lookupModuleId(sourceIdx: number): number {
-        let moduleId = pathToModuleId.get(sourceIdx);
+    function lookupSourcePathIdx(sourceIdx: number): number {
+        let moduleId = pathToSourcePathIdx.get(sourceIdx);
         if (moduleId === undefined) {
-            moduleId = moduleMap.sourcePaths.length;
-            pathToModuleId.set(sourceIdx, moduleId);
+            moduleId = sourcePaths.length;
+            pathToSourcePathIdx.set(sourceIdx, moduleId);
 
-            const fullSourcePath = sourceMap!.getFullSourcePath(sourceIdx);
-            moduleMap.sourcePaths.push(fullSourcePath);
+            const fullSourcePath = sourceIdx === -1 ? path : sourceMap!.getFullSourcePath(sourceIdx);
+            sourcePaths.push(fullSourcePath);
         }
         return moduleId;
     }
 
-    class LocationRefBuilder {
-        private _lastColumnIdx: number = -1;
-        private _lastModuleId: number = -1;
-
-        getLocationRef(lineIdx: number, columnIdx: number, moduleId: number): LocationRef {
-            if (this._lastColumnIdx !== -1) {
-                if (this._lastColumnIdx === columnIdx && this._lastModuleId === moduleId) {
-                    return lineIdx;
-                } else if (this._lastModuleId === moduleId) {
-                    this._lastColumnIdx = columnIdx;
-                    return [lineIdx, columnIdx];
-                }
-            }
-
-            this._lastColumnIdx = columnIdx;
-            this._lastModuleId = moduleId;
-            return [lineIdx, columnIdx, moduleId];
-
-        }
-    }
-
-    const fnLocationRefBuilder = new LocationRefBuilder();
-
-    function declareFunction(offset: number): { functionId: number } {
+    function createLocationReference(offset: number): LocationRef | null {
         const r = sf.getLineAndCharacterOfPosition(offset);
         const lineIdx = r.line;
-        const columnIdx = r.character;
-
-        const functionId = functionCounter++;
-        const result = sourceMap?.sourceMap.lookup(lineIdx, columnIdx);
-        let locationRef: LocationRef | null = null;
+        const charIdx = r.character;
+        const result = sourceMap?.sourceMap.lookup(lineIdx, charIdx);
         if (result) {
-            const moduleId = lookupModuleId(result.sourceIdx);
-            locationRef = fnLocationRefBuilder.getLocationRef(lineIdx, columnIdx, moduleId);
+            const sourcePathIdx = lookupSourcePathIdx(result.sourceIdx);
+            return new LocationRef(result.lineIdx, result.columnIdx, sourcePathIdx);
         }
-        moduleMap.fnMaps.push(locationRef);
+        return new LocationRef(lineIdx, charIdx, lookupSourcePathIdx(-1));
+    }
+
+    function declareFunction(offset: number): { functionId: number } {
+        const functionId = functionCounter;
+        functionCounter++;
+        const locationRef = createLocationReference(offset);
+        fnInfos.push({ location: locationRef, locationByBlockId: [] });
         return { functionId };
     }
 
-    const blockLocationRefBuilder = new LocationRefBuilder();
-
     function declareBlockId(offset: number, ctx: Context): { blockId: number } {
-        const r = sf.getLineAndCharacterOfPosition(offset);
-        const lineIdx = r.line;
-        const columnIdx = r.character;
-
         const blockId = ctx.blockCount;
         ctx.blockCount++;
-        const result = sourceMap?.sourceMap.lookup(lineIdx, columnIdx);
-        let locationRef: LocationRef | null = null;
-        if (result) {
-            const moduleId = lookupModuleId(result.sourceIdx);
-            locationRef = blockLocationRefBuilder.getLocationRef(lineIdx, columnIdx, moduleId);
-        }
-        moduleMap.blockMaps.push(locationRef);
-
+        const locationRef = createLocationReference(offset);
+        fnInfos[ctx.functionId].locationByBlockId.push(locationRef);
         return { blockId };
     }
 
@@ -99,8 +57,13 @@ export function createInstrumentationEditsTs(content: string, sourceMap: SourceM
         context: Context | undefined
     ): void {
         if (ts.isBlock(node) && context) {
-            const blockId = declareBlockId(node.pos, context).blockId;
-            edits.push(SingleTextEdit.insert(t.getPosition(node.statements.pos), `\n$$CI_b(${blockId});`));
+            const blockId = declareBlockId(node.statements.pos, context).blockId;
+            if (node.statements.length > 0) {
+                edits.push(SingleTextEdit.insert(
+                    t.getPosition(node.statements.pos),
+                    `\n$$CI_b(${blockId});`
+                ));
+            }
         }
 
         if (
@@ -120,7 +83,7 @@ export function createInstrumentationEditsTs(content: string, sourceMap: SourceM
             node.body &&
             ts.isBlock(node.body)
         ) {
-            const functionId = declareFunction(node.pos).functionId;
+            const functionId = declareFunction(node.getStart(sf)).functionId;
 
             context = new Context(functionId);
 
@@ -136,19 +99,22 @@ export function createInstrumentationEditsTs(content: string, sourceMap: SourceM
 
     ts.forEachChild(sf, (node) => visitor(node, undefined));
 
+    const moduleInfo = new ModuleInfo(
+        sourcePaths,
+        fnInfos.map(fn => new FunctionInfo(fn.location, fn.locationByBlockId))
+    ).serialize();
+
     edits.push(SingleTextEdit.insert(t.getPosition(sf.statements.pos), `
 globalThis.$$CI_f = globalThis.$$CI_f || (() => {});
 globalThis.$$CI_b = globalThis.$$CI_b || (() => {});
 globalThis.$$CI_r = globalThis.$$CI_r || (() => {});
 globalThis.$$CI_modules = globalThis.$$CI_modules || {};
 const $$CI_moduleId = Object.entries(globalThis.$$CI_modules).length;
-globalThis.$$CI_modules[$$CI_moduleId] = ${JSON.stringify(JSON.stringify(moduleMap))};
+globalThis.$$CI_modules[$$CI_moduleId] = ${JSON.stringify(moduleInfo)};
 const $$CI_fl = functionId => globalThis.$$CI_f($$CI_moduleId, functionId);
 `));
 
     edits.sort((e1, e2) => TextRange.compare(e1.range, e2.range));
-
-    console.log(JSON.stringify(moduleMap.sourcePaths, null, 2));
 
     return new TextEdit(edits);
 }
