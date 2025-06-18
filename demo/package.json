@@ -5,12 +5,15 @@
 	"version": "1.0.0",
 	"devDependencies": {
 		"ts-node": "^10.0.0",
-		"typescript": "^4.9.5"
+		"typescript": "^5.8.3"
 	},
 	"scripts": {
-		"postinstall_": "ts-patch install",
+		"postinstall": "ts-patch install",
 		"dev": "tsc --watch",
 		"build": "tsc",
 		"build-production": "tsc tsconfig.production.json"
+	},
+	"dependencies": {
+		"ts-patch": "^3.3.0"
 	}
 }

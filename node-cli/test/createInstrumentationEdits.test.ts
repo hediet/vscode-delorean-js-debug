@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { test } from 'vitest';
 import { createInstrumentationEditsTs } from '../src/createInstrumentationEditsTs';
 
 test('test1', () => {
@@ -26,7 +26,7 @@ function bar(arr) {
 }
 main();
 `;
-	const edits = createInstrumentationEditsTs(src);
+	const edits = createInstrumentationEditsTs(src, 'test', undefined);
 	const src2 = edits.applyToString(src);
 	console.log(src2);
 });

@@ -1,4 +1,5 @@
 import { LocationRef } from "@hediet/code-insight-recording";
+import { SerializedLocationRef } from "@hediet/code-insight-recording/dist/ModuleInfo";
 import { TextRange } from "@hediet/sourcemap";
 
 export class AnnotatedModuleInfo {
@@ -49,12 +50,12 @@ interface ISerializedAnnotatedModuleInfo {
 
 interface ISerializedAnnotatedFunctionInfo {
     symbolIdx: number;
-    locationPerBlockId: (ISerializedLocationRef | null)[];
+    locationPerBlockId: (SerializedLocationRef | null)[];
 }
 
 interface ISerializedSymbol {
     name: string;
     kind: string;
-    location: ISerializedLocationRange | null;
+    location: SerializedLocationRange | null;
     containerSymbolIdx: number | null;
 }

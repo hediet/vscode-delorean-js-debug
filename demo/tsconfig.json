@@ -7,8 +7,8 @@
 		"strict": true,
 		"inlineSourceMap": false,
 		"sourceMap": true,
-		"skipLibCheck": true
-		//"plugins": [{ "transform": "@hediet/code-insight-transformer" }]
+		"skipLibCheck": true,
+		"plugins": [{ "transform": "@hediet/code-insight-transformer" }]
 	},
 	"include": ["./src/**/*"]
 }
